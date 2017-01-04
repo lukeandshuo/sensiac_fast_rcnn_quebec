@@ -52,8 +52,7 @@
 
 ## Caffe
 
-# User's build configuration
-Makefile.config
+# User's build configuratio
 
 # Data and models are either
 # 1. reference, and not casually committed
