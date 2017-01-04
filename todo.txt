@@ -1,0 +1,8 @@
+- Python evalutation port -ap
+- Python proposals recall -ar
+- registretion of IR and visible images(using target points, image size and FOV)
+- train and test IR and visible seperately (got ap and ar)
+- incoperate motion channel, train and test
+- three channels test
+- change to edgebox
+- add IR method for proposal
