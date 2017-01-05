@@ -18,6 +18,7 @@ import cPickle
 import subprocess
 import uuid
 from sensiac_eval import sensiac_eval
+from fast_rcnn.config import cfg
 class sensiac(datasets.imdb):
     def __init__(self, image_set, devkit_path):
         datasets.imdb.__init__(self, image_set)
@@ -28,7 +29,7 @@ class sensiac(datasets.imdb):
                          'vehicle')
         self._class_to_ind = dict(zip(self.classes, xrange(self.num_classes)))
         self._image_ext = ['.png']
-	self._image_type = 'IR_Reg'
+	self._image_type = cfg.EXP_DIR
         self._image_index = self._load_image_set_index()
   	self._comp_id = 'comp1'
         self._salt = str(uuid.uuid4())
@@ -131,7 +132,7 @@ class sensiac(datasets.imdb):
 
     def _load_selective_search_roidb(self, gt_roidb):
         print "load ss roi"
-        filename = os.path.abspath(os.path.join(self._devkit_path,'ROI',
+        filename = os.path.abspath(os.path.join(self._devkit_path,'ROI',self._image_type,
                                                  self._image_set+ '.mat'))
         assert os.path.exists(filename), \
                'Selective search data not found at: {}'.format(filename)
@@ -269,7 +270,7 @@ class sensiac(datasets.imdb):
     def _do_python_eval(self, output_dir = 'output'):
         annopath = filename = os.path.join(self._data_path, 'Annotations',self._image_type, self._image_set + '.txt')
         imagesetfile = os.path.join(self._data_path, 'Train_Test', self._image_type, self._image_set + '.txt')
-        cachedir = os.path.join(self._devkit_path, 'annotations_cache')
+        cachedir = os.path.join(self.cache_path, 'annotations_cache')
         aps = []
         # The PASCAL VOC metric changed in 2010
         use_07_metric = False 
