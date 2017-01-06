@@ -131,7 +131,10 @@ def demo(net,classes):
 
             vis_detections(im, cls,bbox,score,gt, thresh=CONF_THRESH)
     print "error frame list:",missed_frame
-    output_dir = os.path.join(get_output_dir(imdb,net),"fail_detected_frames.txt")
+    output_dir = get_output_dir(imdb,net)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    output_dir = os.path.join(output_dir,"fail_detected_frames.txt")
     with open(output_dir,'w') as f:
         for i in range(len(missed_frame)):
             f.write("{}\t{}\n".format(missed_frame_ind[i],missed_frame[i]))
