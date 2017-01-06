@@ -18,4 +18,14 @@ Recall@0.9: 0.005
 ap = 0.652
 
 
-3. top1 accuracy: 0.961 (missed frame 82)
+3. change the imagebase into IR image, same config
+
+ap = 0.560
+top1 accuracy: 0.961 (missed frame 82)
+
+AverageRec: 0.123716730038
+Recall@0.5: 0.469
+Recall@0.6: 0.231
+Recall@0.7: 0.050
+Recall@0.8: 0.001
+Recall@0.9: 0.000
