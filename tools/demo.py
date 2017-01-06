@@ -80,8 +80,8 @@ def demo(net,classes):
     missed_frame = []
     missed_frame_ind = []
     for i in xrange(num_images):
-        if i > 100: #test
-            break
+        # if i > 100: #test
+        #     break
         im = cv2.imread(imdb.image_path_at(i))
 
     # Detect all object classes and regress object bounds
@@ -93,7 +93,7 @@ def demo(net,classes):
                '{:d} object proposals').format(timer.total_time, boxes.shape[0])
 
         # Visualize detections for each class
-        CONF_THRESH = 0.6
+        CONF_THRESH = 0.0
         NMS_THRESH = 0.3
         for ind, cls in enumerate(classes):
             cls_ind = CLASSES.index(cls)
@@ -109,7 +109,7 @@ def demo(net,classes):
             dets = dets[keep, :]
 
             # select the bbox with highest score, calculate overlap
-            if len(dets[:,-1]) ==0:
+            if dets.shape[0] ==0:
                 print "miss!!"
                 miss_num += 1
                 missed_frame.append(imdb.image_path_at(i).split('/')[-1])

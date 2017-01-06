@@ -3,7 +3,7 @@
 
 standard ap method :
 ap = 0711
-top1 accuracy = 0.948 (missed frames:109)
+nms top1 accuracy = 0.948 (missed frames:109)
 selective search  recall:
 
 AverageRec: 0.37319391635
@@ -21,7 +21,7 @@ ap = 0.652
 3. change the imagebase into IR image, same config
 
 ap = 0.560
-top1 accuracy: 0.961 (missed frame 82)
+top1 accuracy: 0.9862 (missed frame 29)
 
 AverageRec: 0.123716730038
 Recall@0.5: 0.469
@@ -29,3 +29,13 @@ Recall@0.6: 0.231
 Recall@0.7: 0.050
 Recall@0.8: 0.001
 Recall@0.9: 0.000
+
+4. Use the model train on IR image and test on Visible image
+
+ap = 0.9142
+nms top1 accuracy: 0.9187 (missed 171)
+
+5. Use the model trained on IR image and test on IR image but ROI from Visible image
+
+ap = 0.8161
+top1 accuracy: 0.9534 (missed frames: 98)

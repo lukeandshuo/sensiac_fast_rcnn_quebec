@@ -2,5 +2,5 @@
 .ipynb_checkpoints
 utils/*.c
 utils/*.so
-output
-data
+output/
+data/
