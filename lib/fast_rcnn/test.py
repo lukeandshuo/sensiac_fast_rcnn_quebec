@@ -13,11 +13,40 @@ from utils.timer import Timer
 import numpy as np
 import cv2
 import caffe
-from utils.cython_nms import nms
+# from utils.cython_nms import nms
 import cPickle
 import heapq
 from utils.blob import im_list_to_blob
 import os
+
+def nms(dets, thresh):
+    x1 = dets[:, 0]
+    y1 = dets[:, 1]
+    x2 = dets[:, 2]
+    y2 = dets[:, 3]
+    scores = dets[:, 4]
+
+    areas = (x2 - x1 + 1) * (y2 - y1 + 1)
+    order = scores.argsort()[::-1]
+
+    keep = []
+    while order.size > 0:
+        i = order[0]
+        keep.append(i)
+        xx1 = np.maximum(x1[i], x1[order[1:]])
+        yy1 = np.maximum(y1[i], y1[order[1:]])
+        xx2 = np.minimum(x2[i], x2[order[1:]])
+        yy2 = np.minimum(y2[i], y2[order[1:]])
+
+        w = np.maximum(0.0, xx2 - xx1 + 1)
+        h = np.maximum(0.0, yy2 - yy1 + 1)
+        inter = w * h
+        ovr = inter / (areas[i] + areas[order[1:]] - inter)
+
+        inds = np.where(ovr <= thresh)[0]
+        order = order[inds + 1]
+
+    return keep
 
 def _get_image_blob(im):
     """Converts an image into a network input.
@@ -172,7 +201,7 @@ def im_detect(net, im, boxes):
     # on the unique subset.
     if cfg.DEDUP_BOXES > 0:
         v = np.array([1, 1e3, 1e6, 1e9, 1e12])
-        hashes = np.round(blobs['rois'] * cfg.DEDUP_BOXES).dot(v)
+        hashes = np.round(blobs['rois'] * cfg.DEDUP_BOXES).dot(v).astype(np.int)
         _, index, inv_index = np.unique(hashes, return_index=True,
                                         return_inverse=True)
         blobs['rois'] = blobs['rois'][index, :]
@@ -250,12 +279,12 @@ def test_net(net, imdb):
     num_images = len(imdb.image_index)
     # heuristic: keep an average of 40 detections per class per images prior
     # to NMS
-    max_per_set = 40 * num_images
+    # max_per_set = 400 * num_images
     # heuristic: keep at most 100 detection per class per image prior to NMS
-    max_per_image = 100
+    max_per_image = 2000
     # detection thresold for each class (this is adaptively set based on the
     # max_per_set constraint)
-    thresh = -np.inf * np.ones(imdb.num_classes)
+    # thresh = -np.inf * np.ones(imdb.num_classes)
     # top_scores will hold one minheap of scores per class (used to enforce
     # the max_per_set constraint)
     top_scores = [[] for _ in xrange(imdb.num_classes)]
@@ -281,22 +310,22 @@ def test_net(net, imdb):
 
         _t['misc'].tic()
         for j in xrange(1, imdb.num_classes):
-            inds = np.where((scores[:, j] > thresh[j]) &
-                            (roidb[i]['gt_classes'] == 0))[0]
-            cls_scores = scores[inds, j]
-            cls_boxes = boxes[inds, j*4:(j+1)*4]
+            # inds = np.where((scores[:, j] > thresh[j]) &
+            #                 (roidb[i]['gt_classes'] == 0))[0]
+            cls_scores = scores[:, j]
+            cls_boxes = boxes[:, j*4:(j+1)*4]
             top_inds = np.argsort(-cls_scores)[:max_per_image]
             cls_scores = cls_scores[top_inds]
             cls_boxes = cls_boxes[top_inds, :]
             # push new scores onto the minheap
-            for val in cls_scores:
-                heapq.heappush(top_scores[j], val)
+            # for val in cls_scores:
+            #     heapq.heappush(top_scores[j], val)
             # if we've collected more than the max number of detection,
             # then pop items off the minheap and update the class threshold
-            if len(top_scores[j]) > max_per_set:
-                while len(top_scores[j]) > max_per_set:
-                    heapq.heappop(top_scores[j])
-                thresh[j] = top_scores[j][0]
+            # if len(top_scores[j]) > max_per_set:
+            #     while len(top_scores[j]) > max_per_set:
+            #         heapq.heappop(top_scores[j])
+            #     thresh[j] = top_scores[j][0]
 
             all_boxes[j][i] = \
                     np.hstack((cls_boxes, cls_scores[:, np.newaxis])) \
@@ -304,17 +333,19 @@ def test_net(net, imdb):
 
             if 0:
                 keep = nms(all_boxes[j][i], 0.3)
-                vis_detections(im, imdb.classes[j], all_boxes[j][i][keep, :])
-        _t['misc'].toc()
+                if i==821:
+                    vis_detections(im, imdb.classes[j], all_boxes[j][i][keep, :])
+            _t['misc'].toc()
 
-        print 'im_detect: {:d}/{:d} {:.3f}s {:.3f}s' \
+        print 'im_detect: {:d}/{:d} {:.3f}s {:.3f}s raw{} filtered{}' \
               .format(i + 1, num_images, _t['im_detect'].average_time,
-                      _t['misc'].average_time)
+                      _t['misc'].average_time,len(scores),len(all_boxes[1][i]))
 
-    for j in xrange(1, imdb.num_classes):
-        for i in xrange(num_images):
-            inds = np.where(all_boxes[j][i][:, -1] > thresh[j])[0]
-            all_boxes[j][i] = all_boxes[j][i][inds, :]
+
+    # for j in xrange(1, imdb.num_classes):
+    #     for i in xrange(num_images):
+    #         inds = np.where(all_boxes[j][i][:, -1] > thresh[j])[0]
+    #         all_boxes[j][i] = all_boxes[j][i][inds, :] 
 
     det_file = os.path.join(output_dir, 'detections.pkl')
     with open(det_file, 'wb') as f:

@@ -111,8 +111,8 @@ __C.TEST.BBOX_REG = True
 # coordinates. If DEDUP_BOXES > 0, then DEDUP_BOXES is used as the scale factor
 # for identifying duplicate boxes.
 # 1/16 is correct for {Alex,Caffe}Net, VGG_CNN_M_1024, and VGG16
-__C.DEDUP_BOXES = 1./16.
-
+#__C.DEDUP_BOXES = 1./16.
+__C.DEDUP_BOXES = 1.
 # Pixel mean values (BGR order) as a (1, 1, 3) array
 # We use the same pixel mean for all networks even though it's not exactly what
 # they were trained with
@@ -128,7 +128,7 @@ __C.EPS = 1e-14
 __C.ROOT_DIR = osp.abspath(osp.join(osp.dirname(__file__), '..', '..'))
 
 # Place outputs under an experiments directory
-__C.EXP_DIR = 'Visible'
+__C.EXP_DIR = '3C'
 
 def get_output_dir(imdb, net):
     """Return the directory where experimental artifacts are placed.

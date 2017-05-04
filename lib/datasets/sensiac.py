@@ -17,7 +17,7 @@ import utils.cython_bbox
 import cPickle
 import subprocess
 import uuid
-from sensiac_eval import sensiac_eval
+from sensiac_eval import sensiac_eval_ap, sensiac_eval_top1
 from fast_rcnn.config import cfg
 class sensiac(datasets.imdb):
     def __init__(self, image_set, devkit_path):
@@ -123,7 +123,6 @@ class sensiac(datasets.imdb):
             roidb = datasets.imdb.merge_roidbs(gt_roidb, ss_roidb)
         else:
             roidb = self._load_selective_search_roidb(None)
-            print len(roidb)
 	with open(cache_file, 'wb') as fid:
             cPickle.dump(roidb, fid, cPickle.HIGHEST_PROTOCOL)
         print 'wrote ss roidb to {}'.format(cache_file)
@@ -140,7 +139,8 @@ class sensiac(datasets.imdb):
 
         box_list = []
         for i in xrange(raw_data.shape[0]):
-            box_list.append(raw_data[i][:, (1, 0, 3, 2)] - 1) # change to x1,y1,x2,y2 !!! notice for edgebox!
+            # box_list.append(raw_data[i][:, (1, 0, 3, 2)] - 1) # change to x1,y1,x2,y2 !!! notice for edgebox!
+            box_list.append(raw_data[i][:,:]-1)
 
 	return self.create_roidb_from_box_list(box_list, gt_roidb)
 
@@ -214,7 +214,6 @@ class sensiac(datasets.imdb):
                     overlaps[i,cls]=1.0
 		    seg_areas[i]=(x2-x1+1)*(y2-y1+1)
                 overlaps = scipy.sparse.csr_matrix(overlaps)
-                print boxes
                 gt_roidb.append({'boxes': boxes, 'gt_classes': gt_classes, 'gt_overlaps': overlaps, 'flipped': False,'seg_areas': seg_areas})
         return gt_roidb
 
@@ -271,22 +270,24 @@ class sensiac(datasets.imdb):
         annopath = filename = os.path.join(self._data_path, 'Annotations',self._image_type, self._image_set + '.txt')
         imagesetfile = os.path.join(self._data_path, 'Train_Test', self._image_type, self._image_set + '.txt')
         cachedir = os.path.join(self.cache_path, 'annotations_cache')
+        if not os.path.isdir(output_dir):
+            os.mkdir(output_dir)
+        # evaluated by AP
         aps = []
         # The PASCAL VOC metric changed in 2010
         use_07_metric = False 
         print 'VOC07 metric? ' + ('Yes' if use_07_metric else 'No')
-        if not os.path.isdir(output_dir):
-            os.mkdir(output_dir)
+
         for i, cls in enumerate(self._classes):
             if cls == '__background__':
                 continue
             filename = self._get_sensiac_results_file_template().format(cls)
-            rec, prec, ap = sensiac_eval(
+            rec, prec, ap = sensiac_eval_ap(
                 filename, annopath, imagesetfile, cls, cachedir, ovthresh=0.5,
                 use_07_metric=use_07_metric)
             aps += [ap]
             print('AP for {} = {:.4f}'.format(cls, ap))
-            with open(os.path.join(output_dir, cls + '_pr.pkl'), 'w') as f:
+            with open(os.path.join(output_dir, cls + '_ap.pkl'), 'w') as f:
                 cPickle.dump({'rec': rec, 'prec': prec, 'ap': ap}, f)
         print('Mean AP = {:.4f}'.format(np.mean(aps)))
         print('~~~~~~~~')
@@ -294,14 +295,14 @@ class sensiac(datasets.imdb):
         for ap in aps:
             print('{:.3f}'.format(ap))
         print('{:.3f}'.format(np.mean(aps)))
-        print('~~~~~~~~')
-        print('')
-        print('--------------------------------------------------------------')
-        print('Results computed with the **unofficial** Python eval code.')
-        print('Results should be very close to the official MATLAB eval code.')
-        print('Recompute with `./tools/reval.py --matlab ...` for your paper.')
-        print('-- Thanks, The Management')
-        print('--------------------------------------------------------------')
+
+        #evaluated by Top1
+        for i, cls in enumerate(self._classes):
+            if cls == '__background__':
+                continue
+            filename = self._get_sensiac_results_file_template().format(cls)
+            top1_a = sensiac_eval_top1(output_dir,filename,annopath,imagesetfile,cls,cachedir,ovthresh=0.5)
+            print "top1 accuracy", top1_a
     def evaluate_detections(self, all_boxes, output_dir):
         comp_id = self._write_sensiac_results_file(all_boxes)
         self._do_python_eval(output_dir)

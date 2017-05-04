@@ -29,13 +29,13 @@ def parse_args():
                         default=0, type=int)
     parser.add_argument('--solver', dest='solver',
                         help='solver prototxt',
-                        default='models/VGG_CNN_M_1024/solver.prototxt', type=str)
+                         type=str)
     parser.add_argument('--iters', dest='max_iters',
                         help='number of iterations to train',
                         default=40000, type=int)
     parser.add_argument('--weights', dest='pretrained_model',
                         help='initialize with pretrained model weights',
-                        default='data/imagenet_models/VGG_CNN_M_1024.v2.caffemodel', type=str)
+                         type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default=None, type=str)
@@ -87,6 +87,9 @@ if __name__ == '__main__':
     output_dir = get_output_dir(imdb, None)
     print 'Output will be saved to `{:s}`'.format(output_dir)
     start = time.clock()
+    print args.solver
+    print "Max IterationS"
+    print args.max_iters
     train_net(args.solver, roidb, output_dir,
               pretrained_model=args.pretrained_model,
               max_iters=args.max_iters)

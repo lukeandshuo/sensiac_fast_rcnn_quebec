@@ -30,7 +30,7 @@ def parse_args():
                         default=None, type=str)
     parser.add_argument('--net', dest='caffemodel',
                         help='model to test',
-                        default=None, type=str)
+                        default="output/"+str(cfg.EXP_DIR)+"/train/vgg_cnn_m_1024_fast_rcnn_iter_40000.caffemodel", type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file', default=None, type=str)
     parser.add_argument('--wait', dest='wait',
@@ -65,11 +65,11 @@ if __name__ == '__main__':
 
     print('Using config:')
     pprint.pprint(cfg)
-
+    print args.caffemodel
     while not os.path.exists(args.caffemodel) and args.wait:
         print('Waiting for {} to exist...'.format(args.caffemodel))
         time.sleep(10)
-
+    
     caffe.set_mode_gpu()
     caffe.set_device(args.gpu_id)
     net = caffe.Net(args.prototxt, args.caffemodel, caffe.TEST)

@@ -47,7 +47,12 @@ def sensiac_ap(rec, prec, use_07_metric=False):
         # first append sentinel values at the end
         mrec = np.concatenate(([0.], rec, [1.]))
         mpre = np.concatenate(([0.], prec, [0.]))
+
         plt.plot(mrec,mpre)
+        plt.xlim([0.0,1.0])
+        plt.ylim([0.0,1.0])
+        plt.xlabel('recall')
+        plt.ylabel('precision')
 	plt.show()
         # compute the precision envelope
         for i in range(mpre.size - 1, 0, -1):
@@ -61,7 +66,7 @@ def sensiac_ap(rec, prec, use_07_metric=False):
         ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
     return ap
 
-def sensiac_eval(detpath,
+def sensiac_eval_ap(detpath,
              annopath,
              imagesetfile,
              classname,
@@ -124,14 +129,14 @@ def sensiac_eval(detpath,
     npos = 0
     for imagename in imagenames:
         R = [obj for obj in recs[imagename] if obj['name'] == classname]
-	print "R",R
+	# print "R",R
         bbox = np.array([x['bbox'] for x in R])
-	print "bbox",bbox
+	# print "bbox",bbox
         det = [False] * len(R)
         npos = npos + 1
         class_recs[imagename] = {'bbox': bbox,
                                  'det': det}
-    print "npos:",npos
+    # print "npos:",npos
     print "image length:",len(imagenames)
     # read dets
     detfile = detpath.format(classname)
@@ -200,3 +205,125 @@ def sensiac_eval(detpath,
     ap = sensiac_ap(rec, prec, use_07_metric)
 
     return rec, prec, ap
+
+def IOU(bb,gt):
+    ixmin = np.maximum(gt[0], bb[0])
+    iymin = np.maximum(gt[1], bb[1])
+    ixmax = np.minimum(gt[2], bb[2])
+    iymax = np.minimum(gt[3], bb[3])
+    iw = np.maximum(ixmax - ixmin + 1., 0.)
+    ih = np.maximum(iymax - iymin + 1., 0.)
+    inters = iw * ih
+    # union
+    uni = ((bb[2] - bb[0] + 1.) * (bb[3] - bb[1] + 1.) +
+            (gt[2] - gt[0] + 1.) *
+            (gt[3] - gt[1] + 1.) - inters)
+
+    overlaps = inters / uni
+    return overlaps    
+
+def vis_detections(im, class_name, bbox,score, gt,thresh=0.5):
+    """Draw detected bounding boxes."""
+   # inds = np.where(dets[:, -1] >= thresh)[0]
+    cv2.putText(im,'{:s} {:.3f}'.format(class_name,score),(bbox[0],bbox[1]-3),0,0.6,(255,255,255))
+    cv2.rectangle(im,(bbox[0],bbox[1]),(bbox[2],bbox[3]),(0,255,0),2)
+   # cv2.rectangle(im, (gt[0], gt[1]), (gt[2], gt[3]), (255,, 0), 2)
+    cv2.imshow("result",im)
+    cv2.waitKey(0)
+
+def sensiac_eval_top1( output_dir,
+            detpath,
+             annopath,
+             imagesetfile,
+             classname,
+             cachedir,
+             ovthresh=0.5,):
+
+    # first load gt
+    if not os.path.isdir(cachedir):
+        os.mkdir(cachedir)
+    cachefile = os.path.join(cachedir, 'annots.pkl')
+    # read list of images
+    with open(imagesetfile, 'r') as f:
+        lines = f.readlines()
+    imagenames = [x.strip() for x in lines]
+
+    # if not os.path.isfile(cachefile):
+        # load annots
+    recs = {}
+    for i, imagename in enumerate(imagenames):
+        recs[imagename] = parse_rec(annopath,i)
+        if i % 100 == 0:
+            print 'Reading annotation for {:d}/{:d}'.format(
+                i + 1, len(imagenames))
+    # save
+    print 'Saving cached annotations to {:s}'.format(cachefile)
+    with open(cachefile, 'w') as f:
+        cPickle.dump(recs, f)
+    # else:
+    #     # load
+    #     with open(cachefile, 'r') as f:
+    #         recs = cPickle.load(f)
+
+    # extract gt objects for this class
+
+    class_recs = {}
+    for imagename in imagenames:
+        R = [obj for obj in recs[imagename] if obj['name'] == classname]
+        bbox = np.array([x['bbox'] for x in R])
+        # print "bbox",bbox 
+        class_recs[imagename] = {'bbox': bbox}
+
+    # read dets
+    detfile = detpath.format(classname)
+    with open(detfile, 'r') as f:
+        lines = f.readlines()
+
+    splitlines = [x.strip().split(' ') for x in lines]
+    image_ids = np.array([x[0] for x in splitlines])
+    confidence = np.array([float(x[1]) for x in splitlines])
+    BB = np.array([[float(z) for z in x[2:]] for x in splitlines])
+    # print "BB",BB.shape
+    # print confidence.shape
+    missed_frame = []
+    missed_frame_ind = []
+    miss_num =0
+    for image_ind, image_name in enumerate(imagenames):
+        ids = np.where(image_ids == image_name)[0]
+        boxes = BB[ids,:]
+        scores = confidence[ids]
+        gt = class_recs[image_name]['bbox'][0].astype(float)
+        # print len(ids)
+        if len(ids) == 0:
+            print "not found missed"
+            miss_num += 1
+            missed_frame += [image_name]
+            continue
+        # print boxes,scores,gt
+
+        max_ind = np.argmax(scores)
+        score = scores[max_ind]
+        bbox = boxes[max_ind]
+        iou = IOU(bbox,gt)
+        if image_ind == 821:
+            print max_ind
+            print iou
+        # print iou
+        if iou < 0.5:
+            
+            miss_num += 1
+            missed_frame += [image_name]
+            print "low overlap missed",image_ind,image_name
+    print miss_num
+    missed_frame_file = os.path.join(output_dir,"missed_frame.txt")
+    with open(missed_frame_file,'w') as f:
+        for i in missed_frame:
+            f.write("{}\n".format(i))
+
+
+    # print missed_frame
+    
+    top1_accuracy = 1-(float(miss_num)/len(imagenames))
+
+
+    return top1_accuracy

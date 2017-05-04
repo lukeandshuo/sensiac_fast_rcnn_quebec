@@ -1,9 +1,12 @@
+split in 6:2
 1.original fast-rcnn + selective search+orginal image mean + 40000 itera + data in 3 range , 5 vehicle for train and 3 for test + standart ap method 
 
 
 standard ap method :
-ap = 0711
-nms top1 accuracy = 0.948 (missed frames:109)
+
+ap = 0.711
+nms top1 accuracy = 0.9543 (missed frames:96)
+
 selective search  recall:
 
 AverageRec: 0.37319391635
@@ -33,9 +36,208 @@ Recall@0.9: 0.000
 4. Use the model train on IR image and test on Visible image
 
 ap = 0.9142
-nms top1 accuracy: 0.9187 (missed 171)
+nms top1 accuracy: 0.9605 (missed 83)
 
 5. Use the model trained on IR image and test on IR image but ROI from Visible image
 
 ap = 0.8161
 top1 accuracy: 0.9534 (missed frames: 98)
+
+split in 5:3
+
+IR ROI recall :  
+AverageRec: 0.108890469417
+Recall@0.5: 0.429
+Recall@0.6: 0.196
+Recall@0.7: 0.044
+Recall@0.8: 0.001
+Recall@0.9: 0.000
+
+Visible ROI recall:
+
+AverageRec: 0.332894736842
+Recall@0.5: 0.850
+Recall@0.6: 0.615
+Recall@0.7: 0.320
+Recall@0.8: 0.090
+Recall@0.9: 0.005
+
+V_Motion ROI recall:
+AverageRec: 0.507254623044
+Recall@0.5: 0.961
+Recall@0.6: 0.884
+Recall@0.7: 0.641
+Recall@0.8: 0.258
+Recall@0.9: 0.031
+
+IR_Motion ROI recall:
+AverageRec: 0.272510668563
+Recall@0.5: 0.623
+Recall@0.6: 0.493
+Recall@0.7: 0.299
+Recall@0.8: 0.102
+Recall@0.9: 0.012
+
+3C ROI recall:
+AverageRec: 0.342140825036
+Recall@0.5: 0.904
+Recall@0.6: 0.652
+Recall@0.7: 0.309
+Recall@0.8: 0.077
+Recall@0.9: 0.006
+
+3C EdgeBoxes ROI recall:
+AverageRec: 0.384495021337
+Recall@0.5: 0.710
+Recall@0.6: 0.654
+Recall@0.7: 0.519
+Recall@0.8: 0.207
+Recall@0.9: 0.017
+
+
+
+
+1. IR model in train stage and IR image and ROI in test stage (IR_IR_IR)
+ap = 0.4904
+top1 accuracy = 0.9755 (missed 69)
+
+2. Visible model in train stage and Visible image and RoI in test stage (V_V_V)
+ap = 0.8719
+top1 accuracy = 0.9811 (missed 53)
+
+3. IR model, IR image, visible ROI (IR_IR_V)
+
+ap= 0.7444
+top1 accuracy = 0.9484 (missed 145)
+
+4. IR model, visible image, visible ROI (IR_V_V)
+
+ap=0.8528
+top1 accuracy = 0.9651(missed 98)
+
+5. V_Motion model, V_motion image, v_motion ROI (VM_VM_VM)
+
+ap = 0.8529
+top1 accuracy = 0.9402 (missed 168)
+
+6. Visible model, Visible image, V_motion ROI (V_V_VM)
+
+ap =0.9366
+top1 accuracy = 0.9921(missed 22)
+
+7. IR_Motion model, IR_Motion image, IR_Motion ROI (IRM_IRM_IRM)
+
+ap = 0.4631
+top1 accuracy = 0.8563 (missed 404)
+
+8. 3C model, 3C test image, 3C RoI (C_C_C)
+
+ap = 0.9360
+top1 accuracy = 0.9861 (missed 39)
+
+9 3C model, 3C test image, IR_Motion (C_C_IR)
+
+ap=0.7132
+top1 accuracy = 0.997 (missed 8)
+
+10 3C model, 3C test image, V_Motion RoI (C_C_V)
+
+ap = 0.943
+top1 accuracy = 0.9932 (missed 19)
+
+11 V_IR model, V_IR test image, V_IR ROI (VIR_VIR_VIR training raw)
+
+ap = 0.8464
+top1 accuracy = 0.9872 (missed 36)
+
+
+12 V_IR model, V_IR test image, V_IR ROI (VIR_VIR_VIR training based on visible weights)
+
+ap = 0.8590
+top1 accuracy = 0.9872 (missed 36)
+
+########
+modified evaluation function
+
+1.Visible
+testing time: 0.164s
+top1:0.9847(missed 43)
+AP = 0.9855
+
+2.IR
+testing time: 0.069s
+top1: 0.9758 (missed 68)
+AP = 0.9766
+
+3. V_Motion
+testing time: 0.038s
+top1:0.9374 (missed 176)
+AP = 0.9362
+
+4. V_IR
+testing time: 0.248s
+top1:0.9886 (missed 32)
+AP = 0.9861
+
+5. 3C 
+testing time: 0.1235s
+top1:0.9897 (missed 29)
+AP = 0.9858
+
+6. 3C (ROI from V_IR)
+testing time: 0.038s
+top1:0.9858(missed 40)
+AP = 0.9783
+
+7. Ensemble output
+testing time: 
+top1: 0.9794 (missed 58)
+AP = 0.9752
+
+8. 3C (ROI from EdgeBoxes)
+testing time: 0.351s
+top1:0.9943 (missed 16)
+AP = 0.9909
+
+
+Second##########
+
+1.Visible
+testing time: 0.164s
+top1:0.9804(missed 55)
+AP = 0.9731
+
+2.IR
+testing time: 0.069s
+top1: 0.9691 (missed 87)
+AP = 0.9563
+
+3. V_Motion
+testing time: 0.038s
+top1:0.9239 (missed 214)
+AP = 0.9164
+
+4. V_IR
+testing time: 0.248s
+top1:0.9818 (missed 51)
+AP = 0.0.9737
+
+5. 3C 
+testing time: 0.235s
+top1:0.9890 (missed 31)
+AP = 0.9834
+
+6. 3C (ROI from V_IR)
+testing time: 0.038s
+top1:0.9858(missed 40)
+AP = 0.9783
+
+7. Ensemble output
+testing time: 
+top1: 0.9794 (missed 58)
+AP = 0.9752
+
+8. 3C (ROI from EdgeBoxes)
+testing time: 0.351s
+top1:0.9943 (missed 16)
+AP = 0.9909

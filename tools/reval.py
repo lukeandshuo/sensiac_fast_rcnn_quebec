@@ -22,7 +22,8 @@ def parse_args():
     Parse input arguments
     """
     parser = argparse.ArgumentParser(description='Re-evaluate results')
-    parser.add_argument('output_dir', nargs=1, help='results directory',
+    parser.add_argument('--output_dir',dest = 'output_dir', help='results directory',
+                        default = "output/"+cfg.EXP_DIR+"/test/vgg_cnn_m_1024_fast_rcnn_iter_40000/",
                         type=str)
     parser.add_argument('--imdb', dest='imdb_name',
                         help='dataset to re-evaluate',
@@ -60,7 +61,7 @@ def from_dets(imdb_name, output_dir, args):
 
 if __name__ == '__main__':
     args = parse_args()
-
-    output_dir = os.path.abspath(args.output_dir[0])
+    output_dir = os.path.abspath(args.output_dir)
+    print "output_dir",output_dir
     imdb_name = args.imdb_name
     from_dets(imdb_name, output_dir, args)
