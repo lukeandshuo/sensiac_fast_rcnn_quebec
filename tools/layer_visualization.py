@@ -140,11 +140,11 @@ def demo(net,classes):
     # vis_square(filters.transpose(0,2,3,1))
     ## visualized blob
     # feat = net.blobs['conv5'].data[0,79]
-    feat = net.blobs['conv3'].data[0,:]
+    feat = net.blobs['fuse2'].data[0,:]
     print feat.shape
     # vis_square_single(feat,i, padval=1)
     # vis_square(feat,i, padval=1)
-    generateRGB(feat)
+    # generateRGB(feat)
     max_per_image =2000
 
     CONF_THRESH = 0.0
@@ -183,7 +183,7 @@ if __name__ == '__main__':
     prototxt = os.path.join(cfg.ROOT_DIR, 'models', 'Fusion_Net',
                             'test.prototxt')
     caffemodel = os.path.join(cfg.ROOT_DIR, 'output', Type,'train',
-                 "Fusion_Net_fast_rcnn_iter_20000.caffemodel")
+                 "Fusion_Net_fast_rcnn_iter_40000.caffemodel")
 
     if not os.path.isfile(caffemodel):
         raise IOError(('{:s} not found.\nDid you run ./data/scripts/'

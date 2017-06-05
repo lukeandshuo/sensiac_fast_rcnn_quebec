@@ -29,7 +29,7 @@ class sensiac(datasets.imdb):
                          'vehicle')
         self._class_to_ind = dict(zip(self.classes, xrange(self.num_classes)))
         self._image_ext = ['.png']
-	self._image_type = cfg.EXP_DIR
+	self._image_type = cfg.DATA_SET
         self._image_index = self._load_image_set_index()
   	self._comp_id = 'comp1'
         self._salt = str(uuid.uuid4())

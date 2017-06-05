@@ -27,6 +27,9 @@ import argparse
 from skimage import img_as_ubyte
 from skimage import exposure
 
+feature_folder = "feature"
+results_folder = "results"
+
 CLASSES = ('__background__',
            'vehicle')
 
@@ -37,7 +40,7 @@ NETS = {'vgg16': ('VGG16',
         'caffenet': ('CaffeNet',
                      'caffenet_fast_rcnn_iter_40000.caffemodel'),
         'fusion_net': ('Fusion_Net',
-                     'Fusion_Net_fast_rcnn_iter_20000.caffemodel')
+                     'Fusion_Net_fast_rcnn_iter_40000.caffemodel')
 
         }
 def _strech_intensity(img):
@@ -46,7 +49,7 @@ def _strech_intensity(img):
     # transform to char level
     img = img_as_ubyte(img)
     return img
-def vis_feature(data):
+def vis_feature_RGB(data):
     G = data[0,:]
     G = _strech_intensity(G)
     B = data[1,:]
@@ -54,18 +57,42 @@ def vis_feature(data):
     R = data[2,:]
     R = _strech_intensity(R)
     GBR = cv2.merge((G,B,R))
-    cv2.imshow("featuremap",GBR)
+    cv2.imshow("RGB",GBR)
     cv2.waitKey(25)
-
-def vis_detections(im, class_name, bbox,score, gt,thresh=0.5):
+def vis_feature_gray(data):
+    print data.shape
+    gray = data[0,:]
+    gray = _strech_intensity(gray)
+    cv2.imshow("gray",gray)
+    cv2.waitKey(25)
+def vis_detections(im,i, class_name, bbox,score, gt,thresh=0.5):
     """Draw detected bounding boxes."""
    # inds = np.where(dets[:, -1] >= thresh)[0]
     cv2.putText(im,'{:s} {:.3f}'.format(class_name,score),(bbox[0],bbox[1]-3),0,0.6,(255,255,255))
     cv2.rectangle(im,(bbox[0],bbox[1]),(bbox[2],bbox[3]),(0,255,0),2)
    # cv2.rectangle(im, (gt[0], gt[1]), (gt[2], gt[3]), (255,, 0), 2)
-    cv2.imshow("result",im)
-    cv2.imwrite("screenShot.png",im)
-    cv2.waitKey(25)
+   #  cv2.imshow("result",im)
+    name = results_folder+"/"+str(i)+".png"
+    cv2.imwrite(name,im)
+    # cv2.waitKey(25)
+def vis_square_single(data,i, padsize=0, padval=0):
+
+    # force the number of filters to be square
+    data = data[np.newaxis,:,:]
+    n = int(np.ceil(np.sqrt(data.shape[0])))
+    padding = ((0, n ** 2 - data.shape[0]), (0, padsize), (0, padsize)) + ((0, 0),) * (data.ndim - 3)
+    data = np.pad(data, padding, mode='constant', constant_values=(padval, padval))
+
+    # tile the filters into an image
+    data = data.reshape((n, n) + data.shape[1:]).transpose((0, 2, 1, 3) + tuple(range(4, data.ndim + 1)))
+    data = data.reshape((n * data.shape[1], n * data.shape[3]) + data.shape[4:])
+    # print data.shape
+    # cv2.imshow("filter",data)
+    # cv2.waitKey(0)
+    plt.figure()
+    # plt.imshow(data)
+    name = feature_folder+"/"+str(i)+".png"
+    plt.imsave(name,data)
 
 def IOU(bb,gt):
     ixmin = np.maximum(gt[0], bb[0])
@@ -134,14 +161,21 @@ def demo(net,classes):
         # if i > 100: #test
         #     break
         im = cv2.imread(imdb.image_path_at(i))
+        # cv2.imshow("raw",im)
+        # cv2.waitKey(25)
         print i
     # Detect all object classes and regress object bounds
         timer = Timer()
-        timer.tic()
+        start = timer.tic()
         scores, boxes = im_detect(net, im, roidb[i]['boxes'])
-        timer.toc()
-        feat = net.blobs['conv3'].data[0, :]
-        vis_feature(feat)
+        end = timer.toc()
+        print "time",end
+        feat = net.blobs['conv5'].data[0, 79]
+        vis_square_single(feat,i)
+        # feat1 = net.blobs['conv3'].data[0, :]
+        # vis_feature_RGB(feat1)
+        # feat2 = net.blobs['conv4'].data[0,:]
+        # vis_feature_gray(feat2)
         # print ('Detection took {:.3f}s for '
         #        '{:d} object proposals').format(timer.total_time, boxes.shape[0])
 
@@ -187,7 +221,7 @@ def demo(net,classes):
                 missed_frame.append(imdb.image_path_at(i).split('/')[-1])
                 missed_frame_ind.append(i)
 
-            # vis_detections(im, cls,bbox,score,gt, thresh=CONF_THRESH)
+            vis_detections(im, i, cls,bbox,score,gt, thresh=CONF_THRESH)
     print "error frame list:",missed_frame
     output_dir = get_output_dir(imdb,net)
     if not os.path.exists(output_dir):
@@ -209,7 +243,7 @@ def parse_args():
                         help='Use CPU mode (overrides --gpu)',
                         action='store_true')
     parser.add_argument('--net', dest='demo_net', help='Network to use [vgg_cnn_m_1024]',
-                        choices=NETS.keys(), default='fusion_net')
+                        choices=NETS.keys(), default='vgg_cnn_m_1024')
 
     args = parser.parse_args()
 

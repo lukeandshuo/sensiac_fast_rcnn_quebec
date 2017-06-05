@@ -13,6 +13,6 @@ time ./tools/train_net.py --gpu 0 \
  --solver models/VGG_CNN_M_1024/solver.prototxt \
  --weights data/imagenet_models/VGG_CNN_M_1024.v2.caffemodel \
  --imdb sensiac_train \
- --iters 40000
+ --iters 60000
 
 
