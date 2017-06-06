@@ -19,7 +19,7 @@ CLASSES = ('__background__',
 NETS = {'vgg16': ('VGG16',
                   'vgg16_fast_rcnn_iter_40000.caffemodel'),
         'vgg_cnn_m_1024': ('VGG_CNN_M_1024',
-                           'vgg_cnn_m_1024_fast_rcnn_iter_40000.caffemodel'),
+                           'vgg_cnn_m_1024_fast_rcnn_iter_60000.caffemodel'),
         'caffenet': ('CaffeNet',
                      'caffenet_fast_rcnn_iter_40000.caffemodel')}
 
@@ -140,9 +140,9 @@ def demo(net,classes):
     # vis_square(filters.transpose(0,2,3,1))
     ## visualized blob
     # feat = net.blobs['conv5'].data[0,79]
-    feat = net.blobs['fuse2'].data[0,:]
+    feat = net.blobs['fused_img'].data[0,:]
     print feat.shape
-    # vis_square_single(feat,i, padval=1)
+    vis_square_single(feat,i, padval=1)
     # vis_square(feat,i, padval=1)
     # generateRGB(feat)
     max_per_image =2000

@@ -241,3 +241,7 @@ AP = 0.9752
 testing time: 0.351s
 top1:0.9943 (missed 16)
 AP = 0.9909
+
+9. LastFusionImage (V_IR, ss)
+top1:0.9495 (missed 142)
+AP= 0.9510

@@ -36,7 +36,7 @@ CLASSES = ('__background__',
 NETS = {'vgg16': ('VGG16',
                   'vgg16_fast_rcnn_iter_40000.caffemodel'),
         'vgg_cnn_m_1024': ('VGG_CNN_M_1024',
-                           'vgg_cnn_m_1024_fast_rcnn_iter_40000.caffemodel'),
+                           'vgg_cnn_m_1024_fast_rcnn_iter_60000.caffemodel'),
         'caffenet': ('CaffeNet',
                      'caffenet_fast_rcnn_iter_40000.caffemodel'),
         'fusion_net': ('Fusion_Net',
@@ -59,10 +59,31 @@ def vis_feature_RGB(data):
     GBR = cv2.merge((G,B,R))
     cv2.imshow("RGB",GBR)
     cv2.waitKey(25)
+def vis_square(data,i=0, padsize=1, padval=0):
+    data -= data.min()
+    data /= data.max()
+
+    # force the number of filters to be square
+    n = int(np.ceil(np.sqrt(data.shape[0])))
+    padding = ((0, n ** 2 - data.shape[0]), (0, padsize), (0, padsize)) + ((0, 0),) * (data.ndim - 3)
+    data = np.pad(data, padding, mode='constant', constant_values=(padval, padval))
+
+    # tile the filters into an image
+    data = data.reshape((n, n) + data.shape[1:]).transpose((0, 2, 1, 3) + tuple(range(4, data.ndim + 1)))
+    data = data.reshape((n * data.shape[1], n * data.shape[3]) + data.shape[4:])
+    # print data.shape
+    # cv2.imshow("filter",data)
+    # cv2.waitKey(0)
+    plt.figure()
+    plt.imshow(data)
+    # plt.imsave(str(i)+"_"+Type+"_"+"conv5.png",data)
+    plt.show()
+
 def vis_feature_gray(data):
     print data.shape
     gray = data[0,:]
     gray = _strech_intensity(gray)
+    gray = cv2.resize(gray,(640,480),interpolation=cv2.INTER_CUBIC)
     cv2.imshow("gray",gray)
     cv2.waitKey(25)
 def vis_detections(im,i, class_name, bbox,score, gt,thresh=0.5):
@@ -71,9 +92,9 @@ def vis_detections(im,i, class_name, bbox,score, gt,thresh=0.5):
     cv2.putText(im,'{:s} {:.3f}'.format(class_name,score),(bbox[0],bbox[1]-3),0,0.6,(255,255,255))
     cv2.rectangle(im,(bbox[0],bbox[1]),(bbox[2],bbox[3]),(0,255,0),2)
    # cv2.rectangle(im, (gt[0], gt[1]), (gt[2], gt[3]), (255,, 0), 2)
-   #  cv2.imshow("result",im)
-    name = results_folder+"/"+str(i)+".png"
-    cv2.imwrite(name,im)
+    cv2.imshow("result",im)
+    # name = results_folder+"/"+str(i)+".png"
+    # cv2.imwrite(name,im)
     # cv2.waitKey(25)
 def vis_square_single(data,i, padsize=0, padval=0):
 
@@ -87,12 +108,12 @@ def vis_square_single(data,i, padsize=0, padval=0):
     data = data.reshape((n, n) + data.shape[1:]).transpose((0, 2, 1, 3) + tuple(range(4, data.ndim + 1)))
     data = data.reshape((n * data.shape[1], n * data.shape[3]) + data.shape[4:])
     # print data.shape
-    # cv2.imshow("filter",data)
-    # cv2.waitKey(0)
+    cv2.imshow("filter",data)
+    cv2.waitKey(0)
     plt.figure()
     # plt.imshow(data)
-    name = feature_folder+"/"+str(i)+".png"
-    plt.imsave(name,data)
+    # name = feature_folder+"/"+str(i)+".png"
+    # plt.imsave(name,data)
 
 def IOU(bb,gt):
     ixmin = np.maximum(gt[0], bb[0])
@@ -170,8 +191,12 @@ def demo(net,classes):
         scores, boxes = im_detect(net, im, roidb[i]['boxes'])
         end = timer.toc()
         print "time",end
-        feat = net.blobs['conv5'].data[0, 79]
-        vis_square_single(feat,i)
+        feat = net.blobs['fused_img'].data[0,:]
+        print "feat shape"
+        print feat.shape
+        # vis_square(feat)
+        vis_feature_gray(feat)
+        # vis_square_single(feat,i)
         # feat1 = net.blobs['conv3'].data[0, :]
         # vis_feature_RGB(feat1)
         # feat2 = net.blobs['conv4'].data[0,:]

@@ -128,7 +128,7 @@ __C.EPS = 1e-14
 __C.ROOT_DIR = osp.abspath(osp.join(osp.dirname(__file__), '..', '..'))
 
 # Place outputs under an experiments directory
-__C.EXP_DIR = 'OneImage'
+__C.EXP_DIR = 'FirstOneImage'
 
 # DataBase DIR
 __C.DATA_SET = 'V_IR'

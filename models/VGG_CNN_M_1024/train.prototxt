@@ -1,4 +1,5 @@
-
+# Enter your network definition here.
+# Use Shift+Enter to update the visualization.
 name: "VGG_CNN_M_1024"
 layer {
   name: 'data'
@@ -14,17 +15,208 @@ layer {
     param_str: "'num_classes': 2"
   }
 }
+
+
+layer {
+  name: "FusedConv1"
+  type: "Convolution"
+  bottom: "data"
+  top: "FusedConv1"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  
+  convolution_param {
+    num_output: 96
+    kernel_size: 7
+    stride: 2
+    weight_filler { type: "gaussian" std: 0.01 }
+    bias_filler { type: "constant" value: 0 }
+  }
+
+  
+}
+
+layer {
+  name: "FusedRelu1"
+  type: "ReLU"
+  bottom: "FusedConv1"
+  top: "FusedConv1"
+}
+layer {
+  name: "FusedNorm1"
+  type: "LRN"
+  bottom: "FusedConv1"
+  top: "FusedNorm1"
+  lrn_param {
+    local_size: 5
+    alpha: 0.0001
+    beta: 0.75
+    k: 2
+  }
+}
+
+layer {
+  name: "FusedConv2"
+  type: "Convolution"
+  bottom: "FusedNorm1"
+  top: "FusedConv2"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  
+  convolution_param {
+    num_output: 256
+    kernel_size: 5
+    stride: 2
+      weight_filler { type: "gaussian" std: 0.01 }
+  bias_filler { type: "constant" value: 0 }
+  }
+
+  
+}
+
+layer {
+  name: "FusedRelu2"
+  type: "ReLU"
+  bottom: "FusedConv2"
+  top: "FusedConv2"
+}
+layer {
+  name: "FusedNorm2"
+  type: "LRN"
+  bottom: "FusedConv2"
+  top: "FusedNorm2"
+  lrn_param {
+    local_size: 5
+    alpha: 0.0001
+    beta: 0.75
+    k: 2
+  }
+}
+
+
+layer {
+  name: "FusedDConv1"
+  type: "Deconvolution"
+  bottom: "FusedNorm2"
+  top: "FusedDConv1"
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output: 128
+    bias_term: false
+    kernel_size: 4
+    stride: 4
+  }
+}
+
+
+layer {
+  name: "FusedConv3"
+  type: "Convolution"
+  bottom: "FusedDConv1"
+  top: "FusedConv3"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  
+  convolution_param {
+    num_output: 1
+    kernel_size: 3
+    stride: 1
+  weight_filler { type: "gaussian" std: 0.01 }
+  bias_filler { type: "constant" value: 0 }
+  }
+
+  
+}
+
+layer {
+  name: "FusedRelu3"
+  type: "ReLU"
+  bottom: "FusedConv3"
+  top: "FusedConv3"
+}
+
+
+layer {
+  name: "FusedConv4"
+  type: "Convolution"
+  bottom: "FusedConv3"
+  top: "FusedConv4"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  
+  convolution_param {
+    num_output: 3
+    kernel_size: 3
+    stride: 1
+    pad:1
+    weight_filler { type: "gaussian" std: 0.01 }
+    bias_filler { type: "constant" value: 0 }
+  }
+
+  
+}
+
+layer {
+  name: "FusedRelu4"
+  type: "ReLU"
+  bottom: "FusedConv4"
+  top: "FusedConv4"
+}
+
+
+layer {
+  name: "FusedNorm3"
+  type: "LRN"
+  bottom: "FusedConv4"
+  top: "FusedNorm3"
+  lrn_param {
+    local_size: 5
+    alpha: 0.0001
+    beta: 0.75
+    k: 2
+  }
+}
+
+
+
+
 layer {
   name: "conv1"
   type: "Convolution"
-  bottom: "data"
+  bottom: "FusedNorm3"
   top: "conv1"
   param {
-    lr_mult: 0
-    decay_mult: 0
+    lr_mult: 1
+    decay_mult: 1
   }
   param {
-    lr_mult: 0
+    lr_mult: 2
     decay_mult: 0
   }
   convolution_param {
@@ -33,6 +225,8 @@ layer {
     stride: 2
   }
 }
+
+
 layer {
   name: "relu1"
   type: "ReLU"
@@ -187,34 +381,12 @@ layer {
   top: "conv5"
 }
 
-layer {
-  name: "fused_img"
-  type: "Convolution"
-  bottom: "conv5"
-  top: "fused_img"
-  param { lr_mult: 1.0 }
-  param { lr_mult: 2.0 }
-  convolution_param {
-    num_output: 1
-    pad: 1
-    kernel_size: 3
-    weight_filler { type: "gaussian" std: 0.01 }
-    bias_filler { type: "constant" value: 0 }
-  }
-}
-layer {
-  name: "relu_fusion"
-  type: "ReLU"
-  bottom: "fused_img"
-  top: "fused_img"
-}
-
 
 
 layer {
   name: "roi_pool5"
   type: "ROIPooling"
-  bottom: "fused_img"
+  bottom: "conv5"
   bottom: "rois"
   top: "pool5"
   roi_pooling_param {
@@ -224,10 +396,10 @@ layer {
   }
 }
 layer {
-  name: "fc6_fusion"
+  name: "fc6"
   type: "InnerProduct"
   bottom: "pool5"
-  top: "fc6_fusion"
+  top: "fc6"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -238,36 +410,28 @@ layer {
   }
   inner_product_param {
     num_output: 4096
-    weight_filler {
-      type: "gaussian"
-      std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 layer {
-  name: "relu6_fusion"
+  name: "relu6"
   type: "ReLU"
-  bottom: "fc6_fusion"
-  top: "fc6_fusion"
+  bottom: "fc6"
+  top: "fc6"
 }
 layer {
-  name: "drop6_fusion"
+  name: "drop6"
   type: "Dropout"
-  bottom: "fc6_fusion"
-  top: "fc6_fusion"
+  bottom: "fc6"
+  top: "fc6"
   dropout_param {
     dropout_ratio: 0.5
   }
 }
 layer {
-  name: "fc7_fusion"
+  name: "fc7"
   type: "InnerProduct"
-  bottom: "fc6_fusion"
-  top: "fc7_fusion"
+  bottom: "fc6"
+  top: "fc7"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -278,27 +442,19 @@ layer {
   }
   inner_product_param {
     num_output: 1024
-    weight_filler {
-      type: "gaussian"
-      std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 layer {
-  name: "relu7_fusion"
+  name: "relu7"
   type: "ReLU"
-  bottom: "fc7_fusion"
-  top: "fc7_fusion"
+  bottom: "fc7"
+  top: "fc7"
 }
 layer {
-  name: "drop7_fusion"
+  name: "drop7"
   type: "Dropout"
-  bottom: "fc7_fusion"
-  top: "fc7_fusion"
+  bottom: "fc7"
+  top: "fc7"
   dropout_param {
     dropout_ratio: 0.5
   }
@@ -306,7 +462,7 @@ layer {
 layer {
   name: "cls_score"
   type: "InnerProduct"
-  bottom: "fc7_fusion"
+  bottom: "fc7"
   top: "cls_score"
   param {
     lr_mult: 1
@@ -331,7 +487,7 @@ layer {
 layer {
   name: "bbox_pred"
   type: "InnerProduct"
-  bottom: "fc7_fusion"
+  bottom: "fc7"
   top: "bbox_pred"
   param {
     lr_mult: 1
@@ -370,4 +526,3 @@ layer {
   top: "loss_bbox"
   loss_weight: 1
 }
-
